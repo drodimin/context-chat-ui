@@ -4,7 +4,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DescriptionIcon from '@mui/icons-material/Description';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import ClearIcon from '@mui/icons-material/Clear'; // Import the ClearIcon
+import ClearIcon from '@mui/icons-material/Clear'; 
+import ReactDiffViewer  from 'react-diff-viewer-continued';
+import CodeDiff from '../components/codediff';
+
 
 enum Models {
   GPT_3_5_TURBO = 'gpt-3.5-turbo',
@@ -21,6 +24,14 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false); // Add loading state
 
   const isSupported = 'showOpenFilePicker' in window;
+
+  React.useEffect(() => {
+    const savedState = localStorage.getItem('dashboardState');
+    if (savedState) {
+      const { command } = JSON.parse(savedState);
+      setCommand(command);
+    }
+  }, []);
 
   const selectFile = async () => {
     if (!isSupported) return;
@@ -70,6 +81,34 @@ const Dashboard = () => {
     setFileContent('');
   };
 
+  const updateFile = async (newContent: string) => {
+    if (!fileHandle) {
+      alert('No file selected. Please select a file first.');
+      return;
+    }
+  
+    try {
+      // Create a FileSystemWritableFileStream to write to.
+      const writable = await fileHandle.createWritable();
+  
+      // Write the new content to the file.
+      await writable.write(newContent);
+  
+      // Close the file and write the contents to disk.
+      await writable.close();
+  
+      // Optionally, update the fileContent state to reflect the new content
+      // This is useful if your application displays the file content and you want it to be up to date.
+      setFileContent(newContent);
+  
+      alert('File updated successfully.');
+    } catch (error) {
+      console.error('Error updating file:', error);
+      alert('Error updating file. See console for details.');
+    }
+  };
+  
+
   const submitData = async () => {
     if (!fileContent) {
       alert('No file content available. Please select a file and ensure it has content.');
@@ -108,6 +147,10 @@ const Dashboard = () => {
       setError(null);
       console.log(data); // Handle the response data as needed
       alert('Data submitted successfully');
+
+      // Save to local storage before the API call
+      localStorage.setItem('dashboardState', JSON.stringify({ command }));
+
     } catch (error) {
       setError('Error submitting data: ' + error);
       console.error('Error submitting data:', error);
@@ -201,35 +244,29 @@ const Dashboard = () => {
 
       <TextField
         fullWidth
+        multiline
+        rows={4}
         label="Command"
         variant="outlined"
         value={command}
         onChange={(e) => setCommand(e.target.value)}
-        sx={{ mb: 2 }}
+        sx={{ mb: 2, overflow: 'auto' }}
       />
 
-      <Button
+      {isLoading && <CircularProgress sx={{ mt: 2, mb: 1 }} />} {/* Show spinner when API request is active */}
+      {!isLoading && <Button
         variant="contained"
         color="primary"
         onClick={submitData}
         disabled={!model || !fileHandle || !command}
       >
-        {isLoading ? <CircularProgress size={24} /> : 'Submit'} {/* Show spinner when API request is active */}
-      </Button>
+        Submit
+      </Button>}
 
-      {responseData && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="body1">Response:</Typography>
-          <Typography variant="body1">
-            {responseData.modified_code?.split('\n').map((line: string, index: number) => (
-              <span key={index}>
-                {line}
-                <br />
-              </span>
-            ))}
-          </Typography>
-        </Box>
+      {fileContent && responseData?.modified_code && (
+        <CodeDiff original={fileContent} modified={responseData.modified_code}  onGetAppliedChanges={updateFile} />
       )}
+
       {error && (
         <Box sx={{ mt: 2 }}>
           <Typography variant="body1" color="error">{error}</Typography>
