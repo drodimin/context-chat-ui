@@ -8,7 +8,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 import ReactDiffViewer  from 'react-diff-viewer-continued';
 import CodeDiff from '../components/codediff';
 
-
 enum Models {
   GPT_3_5_TURBO = 'gpt-3.5-turbo',
   GPT_4 = 'gpt-4',
@@ -21,7 +20,7 @@ const Dashboard = () => {
   const [fileContent, setFileContent] = useState<string>('');
   const [responseData, setResponseData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const [isLoading, setIsLoading] = useState(false); 
 
   const isSupported = 'showOpenFilePicker' in window;
 
@@ -40,9 +39,9 @@ const Dashboard = () => {
       const [handle] = await window.showOpenFilePicker!({
         types: [
           {
-            description: 'Text Files',
+            description: 'Frontend Typescript/Javascript Files',
             accept: {
-              'text/plain': ['.txt'],
+              'text/plain': ['.tsx', '.ts', '.js', '.jsx'],
             },
           },
         ],
@@ -87,20 +86,11 @@ const Dashboard = () => {
       return;
     }
   
-    try {
-      // Create a FileSystemWritableFileStream to write to.
+    try {     
       const writable = await fileHandle.createWritable();
-  
-      // Write the new content to the file.
       await writable.write(newContent);
-  
-      // Close the file and write the contents to disk.
       await writable.close();
-  
-      // Optionally, update the fileContent state to reflect the new content
-      // This is useful if your application displays the file content and you want it to be up to date.
       setFileContent(newContent);
-  
       alert('File updated successfully.');
     } catch (error) {
       console.error('Error updating file:', error);
@@ -108,7 +98,6 @@ const Dashboard = () => {
     }
   };
   
-
   const submitData = async () => {
     if (!fileContent) {
       alert('No file content available. Please select a file and ensure it has content.');
@@ -128,7 +117,7 @@ const Dashboard = () => {
     };
 
     try {
-      setIsLoading(true); // Set loading to true
+      setIsLoading(true);
       const response = await fetch(apiUrl + '/process_command', {
         method: 'POST',
         headers: {
@@ -145,10 +134,9 @@ const Dashboard = () => {
       console.log(data)
       setResponseData(data);
       setError(null);
-      console.log(data); // Handle the response data as needed
+      console.log(data);
       alert('Data submitted successfully');
 
-      // Save to local storage before the API call
       localStorage.setItem('dashboardState', JSON.stringify({ command }));
 
     } catch (error) {
@@ -156,7 +144,7 @@ const Dashboard = () => {
       console.error('Error submitting data:', error);
       alert('Error submitting data. See console for details.');
     } finally {
-      setIsLoading(false); // Set loading back to false after request completes
+      setIsLoading(false);
     }
   };
 
@@ -253,7 +241,7 @@ const Dashboard = () => {
         sx={{ mb: 2, overflow: 'auto' }}
       />
 
-      {isLoading && <CircularProgress sx={{ mt: 2, mb: 1 }} />} {/* Show spinner when API request is active */}
+      {isLoading && <CircularProgress sx={{ mt: 2, mb: 1 }} />}
       {!isLoading && <Button
         variant="contained"
         color="primary"
